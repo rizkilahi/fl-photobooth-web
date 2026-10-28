@@ -124,3 +124,106 @@ mengirim IP pengguna ke Google, sudah tercatat di SPEC risiko 6.
 - M2: M1 (golden value filter, bisa sekalian uji visual AC-03.3), M2 (fokus Batal/Esc), L2, L5, L6
   (bersama deliverable aria-live/aria-label), L8 (skenario QA).
 - Fase 5 (sebelum repo public & deploy): L3, L9.
+
+---
+
+# REVIEW — M2 (branch m2-cetak-polish)
+
+Reviewer: profile reviewer · Tanggal: 2026-10-28
+Cakupan: `git diff main...m2-cetak-polish` (a4fde75, e1f43c5, b04578c) — app.js, lib.js, index.html, style.css,
+tests/lib.test.js, README.md, docs/STATUS.md. Konteks: SPEC (M2, Keputusan Gate 1), REVIEW M1, STATUS (Gate M2 =
+info). Tidak pindah branch, tidak build, tidak menjalankan server/browser.
+
+## Keputusan: APPROVE WITH CHANGES
+
+Tidak ada temuan critical/high. 1 medium (M2-M1, regresi potensial shortcut Spasi di Firefox akibat pemindahan
+fokus) sebaiknya diperbaiki/diverifikasi sebelum merge; sisanya low. Keputusan Gate M2 (garis potong di batas
+strip, favicon inline, font hanya weight terpakai, catatan privasi Google Fonts) dicatat sebagai info.
+
+## Bukti pemeriksaan
+- `npx eslint .` → bersih. `npx vitest run` → 49 tes lulus. `npm audit --audit-level=high` → 0 vulnerabilities.
+- Pemindaian baris tambah diff (api key/secret/password/token/path /home/email/private key): tidak ada temuan.
+  `git ls-files` hanya file aplikasi, docs, tests, config (tanpa .env/node_modules). Siap dianggap publik.
+- Independensi golden test: skrip uji terpisah menjalankan `applyFilterToData` lib.js terhadap tabel GOLDEN
+  (7 filter × 4 piksel = 84 kanal): 37 kanal sama, 44 beda 1, 3 beda 2, semua lib ≥ golden (bias +1 konsisten
+  dengan pembulatan per tahap di Chrome). Angka yang tidak identik dengan output lib = bukti kuat nilainya TIDAK
+  diturunkan dari rumus lib.js. `toCss(p)` juga dipaku ke string yang sama → tes menghubungkan string app dan golden.
+- XSS: `innerHTML` berisi konten sudah hilang; sisa `innerHTML = ""` (app.js:85, 305) hanya pengosongan.
+  `sw.style.background = f.bg` dari konstanta FRAMES. `@page` dibangun dari `printLayout` dengan lookup
+  `PRINT_MODES[mode]` + fallback (nilai select tak dikenal/`__proto__` → 2×6), tidak ada interpolasi input pengguna.
+- Privasi: footer index.html:112 dan README akurat terhadap kode (satu-satunya request pihak luar = Google Fonts).
+
+## Status tindak lanjut temuan M1
+- M1 (golden filter) — BERES. tests/lib.test.js:98-122: nilai literal Chrome, toleransi ±2, 7 filter non-identitas,
+  termasuk piksel jenuh & near-white (clamp). Lihat M2-L3 untuk catatan reprodusibilitas.
+- M2 (fokus Batal/Esc) — BERES secara fungsi (app.js:210-220, 426), tapi memunculkan risiko baru M2-M1.
+- L1, L4, L7 — sudah beres di M1 (ac86edb).
+- L2 (fitFont 18px) — BERES. lib.js:52-63 floor eksplisit; tes `toBe(18)`, ganjil, <18, batas tepat 18/20.
+- L3 (`window.__photobooth`, kini app.js:440) — TERBUKA, dijadwalkan Fase 5 (bukan blocker).
+- L5 (innerHTML chip) — BERES. app.js:351-353 createElement + textNode.
+- L6 (a11y label) — BERES. aria-label thumbnail (app.js:310-311), cameraSelect, textCustom, + textPreset,
+  fontSelect, printMode; countdown `aria-live=assertive`, badge `role=status` (index.html:28, 31).
+- L8 (cakupan tes cache/sesi) — SEBAGIAN, diterima. `needsRefilter` pindah ke lib.js:68 dan diuji. Tes
+  "simulasi" (tests/lib.test.js:270-281) memakai harness tiruan getFiltered, jadi wiring app.js (setShot/reset
+  meng-null cache) tetap diverifikasi QA via `stats.filterRuns`; state sesi tetap uji manual.
+- L9 (artefak deploy) — TERBUKA, Fase 5.
+- Info M1 Courier Prime 400 — BERES (index.html:12, FONT_LOADS app.js:402).
+
+## Kecocokan deliverable M2
+- D1 cetak: `@page` dinamis benar (2in×6in / 4in×6in, margin 0, diuji printLayout). Garis potong hanya dibuat
+  bila `layout.cutLine` (4×6) dan `.cutline` default `display:none` di luar print; canvas/PNG tidak tersentuh.
+  Posisi `left: 2in` tepat di batas strip (keputusan Gate M2). `afterprint` mengosongkan img + `@page`.
+  CSS print: semua anak body selain #printArea disembunyikan, img dikunci 2in×6in, color-adjust exact.
+- D2 UI/a11y: swatch border #767676 (≥3:1 WCAG 1.4.11), aria-live, favicon SVG inline, meta description. OK.
+- D3 deploy/README: cara pakai/cetak/privasi lengkap. `Permissions-Policy` tidak bisa diset di GitHub Pages
+  (Keputusan Gate 1) → tidak ada tindakan; benar tidak memakai `_headers`.
+
+## Temuan baru
+
+M2-M1 · medium · app.js:218 + app.js:427-429 (fokus vs shortcut Spasi, Firefox)
+  Spasi memulai sesi di `keydown`; `setBusy(true)` langsung memindah fokus ke btnCancel. Firefox punya perilaku
+  lama "keyup Spasi mengklik tombol yang sedang fokus walau keydown terjadi di elemen lain" (Bugzilla 384601,
+  1595746). Akibatnya di Firefox, menekan Spasi bisa memulai sesi lalu langsung membatalkannya (AC-02.1 gagal).
+  Belum bisa diverifikasi di sini (tanpa browser); uji dev di Chrome tidak akan menangkapnya.
+  Saran: jalankan shortcut di `keyup` (di `keydown` cukup `preventDefault()` agar halaman tidak scroll), atau
+  tunda `btnCancel.focus()` sampai keyup Spasi. Minta QA cek di Firefox: Spasi dari body → sesi berjalan penuh.
+
+M2-L1 · low · app.js:382-398 (print ganda)
+  `print()` async tanpa penjaga. Klik Cetak dua kali cepat: panggilan pertama membuka dialog dengan gambar
+  panggilan kedua, `afterprint` mengosongkan area, lalu panggilan kedua memanggil `window.print()` lagi → dialog
+  kedua berisi halaman kosong.
+  Saran: flag `printing` (return bila true; reset di afterprint/finally) atau disable btnPrint selama print().
+
+M2-L2 · low · style.css:103, app.js:424 (Ctrl+P / menu Print browser)
+  Cetak lewat Ctrl+P/menu tanpa tombol Cetak: semua elemen disembunyikan dan #printArea kosong → halaman kosong.
+  Sebelumnya juga kosong (`.app` disembunyikan), jadi bukan regresi.
+  Saran: sembunyikan app hanya bila ada isi, mis. `body:has(#printArea:not(:empty)) > *:not(#printArea)`,
+  atau handler `beforeprint` yang menampilkan pesan "Gunakan tombol Cetak".
+
+M2-L3 · low · tests/lib.test.js:98-104 (reprodusibilitas golden)
+  Nilai golden independen (terbukti di atas), tapi cara pengambilannya hanya ada di komentar; toleransi ±2
+  sama dengan selisih maksimum yang teramati (3 kanal = 2), jadi margin nol bila Chrome berubah pembulatan.
+  Saran: commit skrip/halaman pengambil (mis. tests/golden/capture.html) agar bisa diulang, atau catat langkah
+  persisnya di README bagian pengembangan. Toleransi biarkan ±2 (lebih longgar melemahkan deteksi koefisien salah).
+
+M2-L4 · low · app.js:47-52, 219 (fokus pasca sesi tidak kontekstual)
+  Setelah sesi selesai fokus selalu ke btnStart. Saat kamera putus, tindakan yang relevan adalah "Sambung ulang"
+  (btnStart hanya memunculkan alert "Kamera belum aktif"). Saat retake via thumbnail, pengguna keyboard harus
+  Tab kembali ke grid thumbnail.
+  Saran: bila `!state.stream` fokus ke btnReconnect; untuk retake tunggal fokus ke thumbnail slot yang sama
+  (setelah renderThumbs).
+
+M2-L5 · low · app.js:375-380, 424 (waktu afterprint lintas browser — item QA)
+  Di Chrome/Edge `window.print()` memblokir sehingga `afterprint` aman. Di Safari/Firefox (pratinjau cetak
+  asinkron) belum diverifikasi bahwa pengosongan #printArea tidak mendahului snapshot cetak.
+  Saran: QA cek pratinjau cetak 2×6 dan 4×6 di Firefox (dan Safari bila ada) tidak kosong. Bila bermasalah,
+  kosongkan area di awal print berikutnya saja atau tunda pembersihan (`setTimeout` ~1 dtk).
+
+Info (bukan temuan): countdown `aria-live=assertive` membacakan tiap detik (10 kali untuk timer 10 dtk) — sesuai
+tujuan, cukup. Bias +1 fallback piksel vs Chrome tidak terlihat secara visual (AC-03.3 terpenuhi).
+
+## Penjadwalan
+- Sebelum merge: M2-M1 (ubah shortcut Spasi ke keyup, ~5 menit) atau minimal QA membuktikan tidak terjadi di
+  Firefox. Opsional cepat: M2-L1.
+- QA M2: skenario M2-M1 (Firefox), M2-L5 (pratinjau cetak Firefox/Safari), filterRuns (L8).
+- Fase 5 / opsional: M2-L2, M2-L3, M2-L4, plus L3 dan L9 dari M1.

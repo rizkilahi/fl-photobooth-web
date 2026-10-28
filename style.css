@@ -72,6 +72,7 @@ select, input[type=text] {
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
 .row:last-child { margin-bottom: 0; }
 .hint { font-size: .78rem; opacity: .7; margin: 10px 0 0; }
+.privacy { font-size: .78rem; opacity: .75; text-align: center; margin: 8px 0 0; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
@@ -79,7 +80,8 @@ select, input[type=text] {
   border: 2px solid var(--line); background: #fff; display: inline-flex; align-items: center; gap: 6px;
 }
 .chip.active { border-color: var(--accent); background: #ffe9f0; font-weight: 600; }
-.chip .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,.2); }
+/* border abu-abu gelap (#767676, kontras 4.5:1 terhadap putih) agar swatch putih tetap terlihat di chip putih/pink */
+.chip .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #767676; flex: none; }
 
 .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .thumb {
@@ -93,12 +95,15 @@ select, input[type=text] {
 .strip-wrap { display: grid; place-items: center; margin-bottom: 14px; }
 #strip { width: 200px; height: 600px; box-shadow: 0 12px 30px rgba(43, 34, 48, .25); border-radius: 4px; }
 
-/* Cetak */
+/* Cetak: hanya #printArea yang tampil; ukuran kertas diatur lewat <style id="page-size"> (@page) dari app.js */
 #printArea { display: none; }
+#printArea .cutline { display: none; }
 @media print {
-  body { background: none !important; }
-  .app { display: none !important; }
-  #printArea { display: flex !important; gap: 0; }
-  #printArea img { display: block; width: 2in; height: 6in; }
+  html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  body:has(#printArea:not(:empty)) > *:not(#printArea) { display: none !important; }
+  body:has(#printArea:not(:empty)) #printArea { display: flex !important; position: relative; gap: 0; margin: 0; padding: 0; break-inside: avoid; page-break-inside: avoid; }
+  #printArea img { display: block; flex: none; width: 2in; height: 6in; max-width: none; margin: 0; padding: 0; border: 0; }
+  /* garis bantu potong: hanya dibuat app.js pada mode 4x6, tepat di batas antar-strip (x = 2in) */
+  #printArea .cutline { display: block; position: absolute; top: 0; bottom: 0; left: 2in; width: 0; border-left: 1px dashed #b5b5b5; transform: translateX(-0.5px); pointer-events: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

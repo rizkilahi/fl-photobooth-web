@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Photobooth</title>
+  <meta name="description" content="Photobooth web gratis: ambil 4 foto beruntun dengan hitung mundur, pilih filter dan frame, lalu cetak strip 2×6 inci atau kertas 4×6 (4R). Foto diproses di browser, tidak diunggah." />
+  <meta name="theme-color" content="#ff5d8f" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff5d8f'/%3E%3Crect x='10' y='20' width='44' height='30' rx='6' fill='%23fff'/%3E%3Crect x='22' y='14' width='20' height='9' rx='3' fill='%23fff'/%3E%3Ccircle cx='32' cy='35' r='10' fill='%232b2230'/%3E%3Ccircle cx='32' cy='35' r='5' fill='%23ffb703'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600&family=Courier+Prime:wght@700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600&family=Courier+Prime:wght@400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <style id="page-size"></style>
 </head>
@@ -22,10 +25,10 @@
       <div class="camera-col">
         <div class="camera-box" id="cameraBox">
           <video id="video" autoplay playsinline muted></video>
-          <div class="countdown" id="countdown"></div>
+          <div class="countdown" id="countdown" aria-live="assertive" aria-atomic="true"></div>
           <div class="flash" id="flash"></div>
           <div class="cam-msg" id="camMsg" role="status"><span id="camMsgText">Mengaktifkan kamera…</span><button class="btn" id="btnReconnect" type="button" hidden>Sambung ulang</button></div>
-          <div class="shot-badge" id="shotBadge"></div>
+          <div class="shot-badge" id="shotBadge" role="status" aria-live="polite" aria-atomic="true"></div>
         </div>
 
         <div class="controls">
@@ -39,7 +42,7 @@
             </select>
           </label>
           <label class="check"><input type="checkbox" id="mirror" checked /> Mirror</label>
-          <select id="cameraSelect" title="Pilih kamera" hidden></select>
+          <select id="cameraSelect" title="Pilih kamera" aria-label="Pilih kamera" hidden></select>
         </div>
 
         <div class="group">
@@ -67,7 +70,7 @@
         <div class="group">
           <h3>Teks</h3>
           <div class="row">
-            <select id="textPreset">
+            <select id="textPreset" aria-label="Teks pada strip">
               <option>Photobooth</option>
               <option>Best Friends Forever</option>
               <option>Kenangan Kita</option>
@@ -76,10 +79,10 @@
               <option value="__custom">Tulis sendiri…</option>
               <option value="">(tanpa teks)</option>
             </select>
-            <input id="textCustom" type="text" maxlength="28" placeholder="Teks kamu" hidden />
+            <input id="textCustom" type="text" maxlength="28" placeholder="Teks kamu" aria-label="Teks kustom (maksimal 28 karakter)" hidden />
           </div>
           <div class="row">
-            <select id="fontSelect">
+            <select id="fontSelect" aria-label="Gaya huruf">
               <option value="Pacifico">Gaya: Script</option>
               <option value="Poppins">Gaya: Modern</option>
               <option value="Courier Prime">Gaya: Mesin ketik</option>
@@ -91,7 +94,7 @@
         <div class="group">
           <h3>Simpan / Cetak</h3>
           <div class="row">
-            <select id="printMode">
+            <select id="printMode" aria-label="Ukuran cetak">
               <option value="strip">Strip 2×6 inci (1 strip)</option>
               <option value="4x6">Kertas 4×6 inci / 4R (2 strip kembar)</option>
             </select>
@@ -101,14 +104,16 @@
             <button class="btn" id="btnDownload" disabled>⬇ Download PNG</button>
             <button class="btn ghost" id="btnReset">↺ Ulang semua</button>
           </div>
-          <p class="hint">Saat dialog cetak muncul: pilih ukuran kertas yang sama, <b>Margins: None</b>, <b>Scale 100%</b>, dan nyalakan <b>Background graphics</b>.</p>
+          <p class="hint">Saat dialog cetak muncul: pilih ukuran kertas yang sama, <b>Margins: None</b>, <b>Scale 100%</b>, dan nyalakan <b>Background graphics</b>. Mode 4×6 menambahkan garis putus-putus tipis di tengah sebagai pemandu gunting (hanya pada cetakan, tidak ada di PNG).</p>
         </div>
       </div>
     </section>
+
+    <footer class="privacy">🔒 <b>Privasi:</b> foto hanya diproses di browser kamu dan tidak diunggah ke server mana pun. Foto hilang saat tab ditutup atau tombol “Ulang semua” ditekan. Satu-satunya permintaan jaringan ke pihak luar: memuat font dari Google Fonts.</footer>
   </main>
 
   <!-- Area khusus cetak -->
-  <div id="printArea"></div>
+  <div id="printArea" aria-hidden="true"></div>
 
   <script type="module" src="app.js"></script>
 </body>
