@@ -33,5 +33,10 @@ Catatan: di form intake user hanya mencentang fitur kamera, tetapi filter, borde
 - Biaya hosting gratis (pribadi). Target deploy diputuskan di Fase 5 (kandidat: Netlify/Vercel/Cloudflare Pages/GitHub Pages).
 - Browser target: Chrome/Edge terbaru di desktop; Firefox/Safari sebaik mungkin.
 
-## Referensi
-- Prototipe cepat (dibuat lead sebelum alur tim, vanilla HTML/JS): `~/work/freelance/_arsip/photobooth-web-prototipe/` — boleh dibaca sebagai referensi UX/layout (strip 600×1800 px @300dpi, 8 filter, 8 frame, mode cetak 2×6 & 4×6). **Bukan** basis kode; tim menentukan stack sendiri.
+## Basis Kode [DIKONFIRMASI]
+- User memilih **alur penuh (PM→Dev→QA→Review) tetapi tetap memakai kode prototipe yang sudah ada** sebagai basis.
+- Kode prototipe (vanilla HTML/CSS/JS, tanpa build step) sudah dipindah ke root repo: `index.html`, `style.css`, `app.js` (commit "feat: impor prototipe").
+- Prototipe sudah memuat: kamera + hitung mundur 3/5/10 dtk, 4 jepretan, foto ulang per slot, 8 filter (ctx.filter + fallback piksel), 8 frame, teks preset/custom + 3 font + tanggal, strip 600×1800 px @300dpi, cetak 2×6 dan 4×6 (2 strip), download PNG.
+- Sudah dites lead hanya dengan kamera tiruan (canvas.captureStream) di Chromium; belum diuji webcam asli/printer, belum ada lint/test, belum ada QA/review.
+- Tugas tim: SPEC & arsitektur menyesuaikan kode ini, identifikasi gap/risiko, lalu milestone perbaikan/penyempurnaan + kesiapan deploy. Pindah stack/framework hanya bila PM punya alasan kuat dan user menyetujui di gate.
+- Salinan asli tetap di `~/work/freelance/_arsip/photobooth-web-prototipe/`.

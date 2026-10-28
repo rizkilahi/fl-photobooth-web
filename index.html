@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Photobooth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600&family=Courier+Prime:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style id="page-size"></style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1>📸 Photobooth</h1>
+      <p>Pilih filter → tekan <b>Mulai</b> → 4 jepretan → hias stripnya → cetak.</p>
+    </header>
+
+    <section class="booth">
+      <!-- Kamera -->
+      <div class="camera-col">
+        <div class="camera-box" id="cameraBox">
+          <video id="video" autoplay playsinline muted></video>
+          <div class="countdown" id="countdown"></div>
+          <div class="flash" id="flash"></div>
+          <div class="cam-msg" id="camMsg">Mengaktifkan kamera…</div>
+          <div class="shot-badge" id="shotBadge"></div>
+        </div>
+
+        <div class="controls">
+          <button class="btn primary big" id="btnStart">▶ Mulai (4 foto)</button>
+          <label>Hitung mundur
+            <select id="timer">
+              <option value="3" selected>3 detik</option>
+              <option value="5">5 detik</option>
+              <option value="10">10 detik</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="mirror" checked /> Mirror</label>
+          <select id="cameraSelect" title="Pilih kamera"></select>
+        </div>
+
+        <div class="group">
+          <h3>Filter</h3>
+          <div class="chips" id="filterChips"></div>
+        </div>
+
+        <div class="group">
+          <h3>Jepretan <small>(klik salah satu untuk foto ulang)</small></h3>
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+      </div>
+
+      <!-- Strip & hiasan -->
+      <div class="strip-col">
+        <div class="strip-wrap">
+          <canvas id="strip" width="600" height="1800"></canvas>
+        </div>
+
+        <div class="group">
+          <h3>Border / Frame</h3>
+          <div class="chips" id="frameChips"></div>
+        </div>
+
+        <div class="group">
+          <h3>Teks</h3>
+          <div class="row">
+            <select id="textPreset">
+              <option>Photobooth</option>
+              <option>Best Friends Forever</option>
+              <option>Kenangan Kita</option>
+              <option>Happy Birthday!</option>
+              <option>Say Cheese!</option>
+              <option value="__custom">Tulis sendiri…</option>
+              <option value="">(tanpa teks)</option>
+            </select>
+            <input id="textCustom" type="text" maxlength="28" placeholder="Teks kamu" hidden />
+          </div>
+          <div class="row">
+            <select id="fontSelect">
+              <option value="Pacifico">Gaya: Script</option>
+              <option value="Poppins">Gaya: Modern</option>
+              <option value="Courier Prime">Gaya: Mesin ketik</option>
+            </select>
+            <label class="check"><input type="checkbox" id="showDate" checked /> Tanggal</label>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Simpan / Cetak</h3>
+          <div class="row">
+            <select id="printMode">
+              <option value="strip">Strip 2×6 inci (1 strip)</option>
+              <option value="4x6">Kertas 4×6 inci / 4R (2 strip kembar)</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="btnPrint" disabled>🖨 Cetak</button>
+            <button class="btn" id="btnDownload" disabled>⬇ Download PNG</button>
+            <button class="btn ghost" id="btnReset">↺ Ulang semua</button>
+          </div>
+          <p class="hint">Saat dialog cetak muncul: pilih ukuran kertas yang sama, <b>Margins: None</b>, <b>Scale 100%</b>, dan nyalakan <b>Background graphics</b>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Area khusus cetak -->
+  <div id="printArea"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
