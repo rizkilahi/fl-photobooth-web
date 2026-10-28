@@ -13,7 +13,15 @@ Web photobooth statis (HTML/CSS/JS murni, tanpa backend). Foto diproses di brows
 ```
 python3 -m http.server 8000
 ```
-Buka http://localhost:8000 (kamera hanya jalan di `localhost` atau `https://`).
+Buka http://localhost:8000 (kamera hanya jalan di `localhost` atau `https://`). Aplikasi memakai ES module (`<script type="module">`), jadi harus dibuka lewat server HTTP — membuka `index.html` langsung via `file://` tidak jalan.
+
+## Pengembangan (opsional, hanya dev)
+```
+npm install      # ESLint + Vitest (devDependencies saja; aplikasi tetap zero-build)
+npm run lint
+npm test
+```
+Fungsi murni (filter, crop, tanggal, font, pesan error) ada di `lib.js` dan diuji di `tests/`.
 
 ## Deploy
 Folder ini bisa langsung di-deploy sebagai situs statis (GitHub Pages / Netlify / Vercel / Cloudflare Pages). Wajib HTTPS agar kamera bisa diakses.
