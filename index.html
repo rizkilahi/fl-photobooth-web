@@ -24,12 +24,13 @@
           <video id="video" autoplay playsinline muted></video>
           <div class="countdown" id="countdown"></div>
           <div class="flash" id="flash"></div>
-          <div class="cam-msg" id="camMsg">Mengaktifkan kamera…</div>
+          <div class="cam-msg" id="camMsg" role="status"><span id="camMsgText">Mengaktifkan kamera…</span><button class="btn" id="btnReconnect" type="button" hidden>Sambung ulang</button></div>
           <div class="shot-badge" id="shotBadge"></div>
         </div>
 
         <div class="controls">
           <button class="btn primary big" id="btnStart">▶ Mulai (4 foto)</button>
+          <button class="btn danger big" id="btnCancel" hidden>✖ Batal</button>
           <label>Hitung mundur
             <select id="timer">
               <option value="3" selected>3 detik</option>
@@ -38,7 +39,7 @@
             </select>
           </label>
           <label class="check"><input type="checkbox" id="mirror" checked /> Mirror</label>
-          <select id="cameraSelect" title="Pilih kamera"></select>
+          <select id="cameraSelect" title="Pilih kamera" hidden></select>
         </div>
 
         <div class="group">
@@ -109,6 +110,6 @@
   <!-- Area khusus cetak -->
   <div id="printArea"></div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
