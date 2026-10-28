@@ -37,7 +37,7 @@ body {
 @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 .cam-msg { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; text-align: center; padding: 20px; }
 .cam-msg:empty, .cam-msg[hidden] { display: none; }
-.cam-msg { flex-direction: column; gap: 12px; align-content: center; justify-items: center; }
+.cam-msg { gap: 12px; align-content: center; justify-items: center; }
 .cam-msg .btn { color: var(--ink); }
 .shot-badge {
   position: absolute; top: 12px; left: 12px; background: var(--accent); color: #fff;

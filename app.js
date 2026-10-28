@@ -70,6 +70,7 @@ async function startCamera(deviceId) {
     stream.getVideoTracks().forEach((t) => t.addEventListener("ended", () => onCameraLost(stream)));
     video.srcObject = stream;
     await video.play().catch(() => {});
+    if (token !== startToken) return; // panggilan lebih baru sudah mengambil alih
     showCamMessage("");
     await listCameras().catch(() => {});
   } catch (err) {
@@ -354,6 +355,7 @@ function buildChips() {
 // ---------- Simpan & cetak ----------
 function download() {
   strip.toBlob((blob) => {
+    if (!blob) { alert("Gagal membuat file PNG. Silakan coba lagi."); return; }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = fileName(new Date());
     document.body.appendChild(a); a.click(); a.remove();
