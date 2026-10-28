@@ -3,6 +3,7 @@ import {
   PHOTO_W, PHOTO_H, STRIP_W, STRIP_H, SHOTS, PAD, GAP, FOOTER_TOP, RAW_W, RAW_H,
   FILTERS, toCss, cropRect, applyFilterToData, applyPixelFilter, detectCtxFilter,
   seeded, formatDate, fileName, fontStack, fontSpec, fitFont, cameraErrorMessage,
+  needsRefilter, printLayout,
 } from "../lib.js";
 
 describe("konstanta layout", () => {
@@ -94,19 +95,31 @@ describe("applyFilterToData (matriks piksel vs rumus)", () => {
     const c = 1.6, off = 255 * (0.5 - 0.5 * c);
     expect(run([100, 128, 200], { contrast: c }).slice(0, 3)).toEqual([100, 128, 200].map((v) => Math.round(clamp(v * c + off))));
   });
-  it("kombinasi 'vintage' mengikuti rumus berurutan (sepia -> saturate -> brightness -> contrast)", () => {
-    const p = FILTERS.find((f) => f.id === "vintage").p;
-    const [r0, g0, b0] = [120, 80, 200];
-    const s = 1 - p.sepia;
-    const m1 = [0.393 + 0.607 * s, 0.769 - 0.769 * s, 0.189 - 0.189 * s, 0.349 - 0.349 * s, 0.686 + 0.314 * s, 0.168 - 0.168 * s, 0.272 - 0.272 * s, 0.534 - 0.534 * s, 0.131 + 0.869 * s];
-    let r = clamp(m1[0] * r0 + m1[1] * g0 + m1[2] * b0), g = clamp(m1[3] * r0 + m1[4] * g0 + m1[5] * b0), b = clamp(m1[6] * r0 + m1[7] * g0 + m1[8] * b0);
-    const q = p.saturate;
-    const m2 = [0.213 + 0.787 * q, 0.715 - 0.715 * q, 0.072 - 0.072 * q, 0.213 - 0.213 * q, 0.715 + 0.285 * q, 0.072 - 0.072 * q, 0.213 - 0.213 * q, 0.715 - 0.715 * q, 0.072 + 0.928 * q];
-    [r, g, b] = [clamp(m2[0] * r + m2[1] * g + m2[2] * b), clamp(m2[3] * r + m2[4] * g + m2[5] * b), clamp(m2[6] * r + m2[7] * g + m2[8] * b)];
-    const off = 255 * (0.5 - 0.5 * p.contrast);
-    const out = [r, g, b].map((v) => Math.round(clamp(clamp(v * p.brightness) * p.contrast + off)));
-    expect(run([r0, g0, b0], p).slice(0, 3)).toEqual(out);
-  });
+  // Golden value dari ctx.filter Chrome NYATA (HeadlessChrome 145, Linux), diambil 2026-10-28: canvas 1x1 diisi
+  // rgb(r,g,b), `ctx.filter = <string CSS>` (urutan seperti toCss: grayscale, sepia, saturate, brightness, contrast),
+  // drawImage ke canvas 1x1 lain, getImageData. Angka di bawah LITERAL hasil Chrome, bukan hasil rumus lib.js.
+  // Toleransi ±2: Chrome membulatkan di tiap tahap filter, sedangkan fallback piksel membulatkan sekali di akhir.
+  // Sekaligus bukti AC-03.3 (fallback piksel visual setara ctx.filter).
+  const TOL = 2;
+  const GOLDEN = {
+    bw: { css: "grayscale(1) contrast(1.15)", rows: [[[120, 80, 200], [92, 92, 92]], [[200, 150, 100], [161, 161, 161]], [[30, 200, 60], [157, 157, 157]], [[240, 240, 240], [255, 255, 255]]] },
+    sepia: { css: "sepia(0.85) contrast(1.05)", rows: [[[120, 80, 200], [143, 122, 115]], [[200, 150, 100], [215, 186, 140]], [[30, 200, 60], [156, 165, 112]], [[240, 240, 240], [255, 255, 231]]] },
+    vintage: { css: "sepia(0.4) saturate(0.8) brightness(1.08) contrast(0.9)", rows: [[[120, 80, 200], [136, 111, 159]], [[200, 150, 100], [204, 174, 137]], [[30, 200, 60], [111, 185, 108]], [[240, 240, 240], [242, 242, 242]]] },
+    warm: { css: "sepia(0.2) saturate(1.35) brightness(1.05)", rows: [[[120, 80, 200], [139, 89, 217]], [[200, 150, 100], [226, 163, 94]], [[30, 200, 60], [27, 214, 46]], [[240, 240, 240], [255, 255, 243]]] },
+    pop: { css: "saturate(1.8) contrast(1.15)", rows: [[[120, 80, 200], [139, 56, 255]], [[200, 150, 100], [249, 146, 42]], [[30, 200, 60], [0, 253, 0]], [[240, 240, 240], [255, 255, 255]]] },
+    noir: { css: "grayscale(1) brightness(0.9) contrast(1.6)", rows: [[[120, 80, 200], [62, 62, 62]], [[200, 150, 100], [149, 149, 149]], [[30, 200, 60], [144, 144, 144]], [[240, 240, 240], [255, 255, 255]]] },
+    fade: { css: "saturate(0.6) brightness(1.12) contrast(0.8)", rows: [[[120, 80, 200], [124, 103, 167]], [[200, 150, 100], [188, 162, 135]], [[30, 200, 60], [95, 187, 111]], [[240, 240, 240], [229, 229, 229]]] },
+  };
+  for (const [id, { css, rows }] of Object.entries(GOLDEN)) {
+    it(`filter '${id}' cocok dengan golden value Chrome (±${TOL})`, () => {
+      const p = FILTERS.find((f) => f.id === id).p;
+      expect(toCss(p)).toBe(css); // string yang diberikan ke Chrome = string yang dipakai app
+      for (const [input, expected] of rows) {
+        const out = run(input, p).slice(0, 3);
+        out.forEach((v, k) => expect(Math.abs(v - expected[k]), `${id} ${input} kanal ${k}: ${v} vs ${expected[k]}`).toBeLessThanOrEqual(TOL));
+      }
+    });
+  }
   it("alpha tidak diubah, banyak piksel diproses semua", () => {
     const d = new Uint8ClampedArray([255, 0, 0, 77, 0, 255, 0, 200]);
     applyFilterToData(d, { grayscale: 1 });
@@ -209,12 +222,20 @@ describe("font fallback & fitFont", () => {
     expect(ctx.measureText("Best Friends Forever").width + 20 * 0.5 * 2).toBeGreaterThan(508); // ukuran +2 tidak muat
     expect(ctx.font).toBe(`${size}px "Pacifico", cursive`);
   });
-  it("batas bawah 18px, weight dipakai", () => {
+  it("batas bawah 18px benar-benar tercapai, weight dipakai", () => {
     const ctx = fakeCtx();
     const size = fitFont(ctx, "x".repeat(500), "Poppins", 56, 100, "600");
-    expect(size).toBeGreaterThanOrEqual(18);
-    expect(size).toBeLessThanOrEqual(20);
-    expect(ctx.font).toMatch(/^600 \d+px "Poppins", system-ui, sans-serif$/);
+    expect(size).toBe(18);
+    expect(ctx.font).toBe('600 18px "Poppins", system-ui, sans-serif');
+  });
+  it("ukuran awal ganjil tidak melewati batas bawah; ukuran awal < 18 dipaku ke 18", () => {
+    expect(fitFont(fakeCtx(), "x".repeat(500), "Pacifico", 57, 100)).toBe(18);
+    expect(fitFont(fakeCtx(), "x".repeat(500), "Pacifico", 10, 100)).toBe(18);
+  });
+  it("tepat muat di ukuran 18 -> berhenti di 18; muat di 20 -> tidak turun ke 18", () => {
+    // lebar = len * size * 0.5 -> "x"*10: 18px = 90, 20px = 100
+    expect(fitFont(fakeCtx(), "x".repeat(10), "Pacifico", 56, 90)).toBe(18);
+    expect(fitFont(fakeCtx(), "x".repeat(10), "Pacifico", 56, 100)).toBe(20);
   });
 });
 
@@ -233,5 +254,41 @@ describe("cameraErrorMessage (Bahasa Indonesia)", () => {
   });
   it("konteks tidak aman -> instruksi https/localhost", () => {
     expect(cameraErrorMessage(null, { secure: false })).toMatch(/https:\/\/ atau http:\/\/localhost/);
+  });
+});
+
+describe("needsRefilter (keputusan cache filter per slot)", () => {
+  const entry = (filterId) => ({ filterId, canvas: {}, thumbUrl: null });
+  it("belum ada cache (foto baru/reset) -> filter", () => {
+    expect(needsRefilter(null, "normal")).toBe(true);
+    expect(needsRefilter(undefined, "sepia")).toBe(true);
+  });
+  it("filter sama -> pakai cache; filter beda -> filter ulang", () => {
+    expect(needsRefilter(entry("sepia"), "sepia")).toBe(false);
+    expect(needsRefilter(entry("sepia"), "noir")).toBe(true);
+  });
+  it("simulasi: ketik teks/ganti frame tidak memfilter; ganti filter +4; retake 1 slot +1", () => {
+    let runs = 0;
+    const cache = new Array(4).fill(null);
+    let filter = "normal";
+    const get = (i) => { if (needsRefilter(cache[i], filter)) { runs++; cache[i] = entry(filter); } return cache[i]; };
+    const renderAll = () => [0, 1, 2, 3].forEach(get);
+    renderAll(); expect(runs).toBe(4);              // foto pertama kali
+    renderAll(); renderAll(); expect(runs).toBe(4); // ketik teks / ganti frame / tanggal
+    filter = "vintage"; renderAll(); expect(runs).toBe(8); // ganti filter
+    cache[2] = null; renderAll(); expect(runs).toBe(9);    // retake slot 3
+  });
+});
+
+describe("printLayout (cetak 2x6 vs 4x6)", () => {
+  it("strip 2x6: 1 salinan, @page 2in x 6in, tanpa garis potong", () => {
+    expect(printLayout("strip")).toEqual({ copies: 1, widthIn: 2, heightIn: 6, pageCss: "@page { size: 2in 6in; margin: 0; }", cutLine: false });
+  });
+  it("4x6: 2 salinan, @page 4in x 6in, dengan garis potong", () => {
+    expect(printLayout("4x6")).toEqual({ copies: 2, widthIn: 4, heightIn: 6, pageCss: "@page { size: 4in 6in; margin: 0; }", cutLine: true });
+  });
+  it("mode tak dikenal jatuh ke 2x6 (aman)", () => {
+    expect(printLayout("zzz").copies).toBe(1);
+    expect(printLayout(undefined).cutLine).toBe(false);
   });
 });

@@ -49,15 +49,31 @@ export function fontSpec(weight, size, family) {
   return `${weight} ${size}px ${fontStack(family)}`.trim().replace(/\s+/g, " ");
 }
 
-/** Kecilkan font (langkah 2px, batas bawah 18px) hingga teks muat di maxW. `ctx` = CanvasRenderingContext2D.
- *  Mengatur ctx.font dan mengembalikan ukuran akhir. */
+export const FONT_MIN = 18;
+/** Kecilkan font (langkah 2px, batas bawah FONT_MIN = 18px) hingga teks muat di maxW. `ctx` = CanvasRenderingContext2D.
+ *  Mengatur ctx.font dan mengembalikan ukuran akhir (ukuran terakhir yang dipasang ke ctx.font). */
 export function fitFont(ctx, text, family, startSize, maxW, weight = "") {
-  let size = startSize;
-  do {
+  let size = Math.max(FONT_MIN, startSize);
+  ctx.font = fontSpec(weight, size, family);
+  while (size > FONT_MIN && ctx.measureText(text).width > maxW) {
+    size = Math.max(FONT_MIN, size - 2);
     ctx.font = fontSpec(weight, size, family);
-    size -= 2;
-  } while (ctx.measureText(text).width > maxW && size > 18);
-  return size + 2;
+  }
+  return size;
+}
+
+// ---------- Cache filter per slot: kapan foto harus difilter ulang ----------
+/** `entry` = { filterId, canvas, ... } atau null/undefined. Filter ulang hanya bila belum ada cache
+ *  (foto baru / reset meng-null-kan entry) atau filter yang aktif berbeda dari yang di-cache. */
+export const needsRefilter = (entry, filterId) => !entry || entry.filterId !== filterId;
+
+// ---------- Layout cetak ----------
+export const PRINT_MODES = { strip: { copies: 1 }, "4x6": { copies: 2 } };
+/** Layout halaman cetak. Garis bantu potong (`cutLine`) hanya untuk kertas 4x6 (2 strip); PNG/strip 2x6 tidak berubah. */
+export function printLayout(mode) {
+  const copies = PRINT_MODES[mode]?.copies ?? 1;
+  const widthIn = copies * 2, heightIn = 6;
+  return { copies, widthIn, heightIn, pageCss: `@page { size: ${widthIn}in ${heightIn}in; margin: 0; }`, cutLine: copies > 1 };
 }
 
 // ---------- Crop tengah rasio 3:2 ----------
