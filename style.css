@@ -36,7 +36,9 @@ body {
 .flash.on { animation: flash .45s ease-out; }
 @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 .cam-msg { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; text-align: center; padding: 20px; }
-.cam-msg:empty { display: none; }
+.cam-msg:empty, .cam-msg[hidden] { display: none; }
+.cam-msg { gap: 12px; align-content: center; justify-items: center; }
+.cam-msg .btn { color: var(--ink); }
 .shot-badge {
   position: absolute; top: 12px; left: 12px; background: var(--accent); color: #fff;
   padding: 4px 12px; border-radius: 999px; font-weight: 600; font-size: .9rem;
@@ -59,6 +61,8 @@ select, input[type=text] {
 .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
 .btn.primary { background: var(--accent); color: #fff; }
+.btn.danger { background: #d92d20; color: #fff; }
+.btn[hidden] { display: none; }
 .btn.big { font-size: 1.1rem; padding: 12px 22px; }
 .btn.ghost { box-shadow: none; border-color: var(--line); }
 

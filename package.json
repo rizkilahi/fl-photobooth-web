@@ -1,0 +1,17 @@
+{
+  "name": "photobooth-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web photobooth statis (zero-build). package.json hanya untuk tooling dev (lint + test).",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "vitest": "^5.0.5"
+  }
+}
