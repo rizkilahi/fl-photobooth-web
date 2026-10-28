@@ -63,7 +63,7 @@
   - **AC-06.2:** Tombol `Cetak` hanya aktif setelah keempat slot foto terisi penuh dan sesi pemotretan tidak sedang berjalan.
   - **AC-06.3:** Mode `Strip 2×6 inci (1 strip)` mengatur `@page { size: 2in 6in; margin: 0; }` dan menyiapkan 1 gambar strip di `#printArea` sebelum memanggil dialog `window.print()`.
   - **AC-06.4:** Mode `Kertas 4×6 inci / 4R (2 strip kembar)` mengatur `@page { size: 4in 6in; margin: 0; }` dan menyiapkan 2 gambar strip berdampingan di `#printArea` (dilengkapi penanda/garis bantu potong tipis) sebelum memanggil `window.print()`.
-  - **AC-06.5:** **[USULAN DIPERTAHANKAN]** Tombol `Download PNG` mengunduh hasil strip (`600 × 1800 px`) dengan nama file berformat `photobooth-YYYYMMDD-HHMMSS.png`.
+  - **AC-06.5:** **[DIKONFIRMASI]** Tombol `Download PNG` mengunduh hasil strip (`600 × 1800 px`) dengan nama file berformat `photobooth-YYYYMMDD-HHMMSS.png`.
 
 ## Scope
 
@@ -74,7 +74,7 @@
 - 8 variasi border/frame strip.
 - Kustomisasi footer strip: preset teks, teks bebas (maks 28 karakter), tanpa teks, 3 pilihan font, dan toggle tanggal.
 - Mode cetak `2×6 inci` (1 strip) dan `4×6 inci / 4R` (2 strip kembar) via dialog cetak browser + instruksi pengaturan margin/skala.
-- **[USULAN]** Mempertahankan tombol `Download PNG` yang sudah ada di prototipe.
+- **[DIKONFIRMASI]** Mempertahankan tombol `Download PNG` yang sudah ada di prototipe.
 - Tooling kualitas ringan (ESLint + Vitest untuk fungsi logika murni) tanpa mengubah sifat zero-build aplikasi saat dideploy.
 - Konfigurasi kesiapan deploy statis HTTPS.
 
@@ -109,7 +109,7 @@
 1. **[ASUMSI]** Pengguna mengakses aplikasi melalui browser modern (Chrome, Edge, Firefox, atau Safari versi terkini) di laptop/PC yang memiliki webcam dan terhubung ke printer.
 2. **[ASUMSI]** Aplikasi dideploy pada layanan hosting statis yang menyediakan sertifikat SSL/HTTPS otomatis (wajib untuk API `navigator.mediaDevices.getUserMedia`).
 3. **[ASUMSI]** Untuk printer rumahan yang tidak mendukung ukuran kertas khusus `2×6 inci`, pengguna akan memakai kertas foto `4×6 inci (4R)` dengan mode `2 strip kembar` lalu mengguntingnya menjadi dua.
-4. **[ASUMSI]** Fitur `Download PNG` yang sudah ada di prototipe tetap dipertahankan sebagai fitur pelengkap tanpa biaya tambahan.
+4. **[DIKONFIRMASI]** Fitur `Download PNG` yang sudah ada di prototipe tetap dipertahankan sebagai fitur pelengkap tanpa biaya tambahan.
 
 ### Risiko Teknis & Mitigasi
 1. **Izin Kamera & Keharusan HTTPS (`getUserMedia`):**
@@ -142,3 +142,10 @@
 3. **Pilihan Platform Deploy Statis Gratis (Fase 5):**
    - Untuk deploy publik nanti, apakah lebih memilih **GitHub Pages** (langsung dari repo `rizkilahi/fl-photobooth-web`), **Cloudflare Pages**, atau **Vercel/Netlify**?
    - *Saran jawaban:* **GitHub Pages** atau **Cloudflare Pages** (keduanya gratis, mendukung HTTPS otomatis, dan sangat cepat untuk situs statis murni tanpa backend).
+
+
+## Keputusan Gate 1 (2026-10-28, The Uncle)
+1. SPEC & ARCHITECTURE disetujui; lanjut ke M1 (stack tetap vanilla JS zero-build).
+2. Download PNG **dipertahankan** (AC-06.5).
+3. Mode cetak 4×6 **ditambah garis bantu potong** tipis di tengah (AC-06.4, dikerjakan di M2).
+4. Deploy: **GitHub Pages**, repo `rizkilahi/fl-photobooth-web` akan dijadikan **public** saat Fase 5 (GitHub Pages gratis tidak mendukung repo private). Konsekuensi: jangan pernah commit secret/data pribadi; header kustom (`Permissions-Policy`) tidak bisa diatur di GitHub Pages → gunakan atribut/meta yang memungkinkan saja, jangan bergantung pada `_headers`.

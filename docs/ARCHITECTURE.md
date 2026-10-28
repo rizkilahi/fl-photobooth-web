@@ -70,6 +70,6 @@ Aplikasi tidak menggunakan database atau penyimpanan persisten. Seluruh state be
 
 ## 6. Opsi Hosting Statis (HTTPS Wajib)
 Karena tidak ada backend maupun langkah build wajib, repositori dapat dideploy langsung ke salah satu layanan gratis berikut di Fase 5:
-1. **GitHub Pages (Rekomendasi Utama):** Langsung aktif dari branch `main` di repo `rizkilahi/fl-photobooth-web` dengan HTTPS bawaan `*.github.io` tanpa akun tambahan.
+1. **GitHub Pages [DIPILIH Gate 1]:** Aktif dari branch `main`, HTTPS bawaan `*.github.io`. Paket gratis mensyaratkan repo **public** (repo akan dijadikan public di Fase 5). Tidak mendukung header HTTP kustom.
 2. **Cloudflare Pages:** CDN global sangat cepat, HTTPS otomatis, dan mendukung kustomisasi header keamanan (`_headers` untuk `Permissions-Policy: camera=(self)`).
 3. **Vercel / Netlify:** Alternatif populer dengan preview URL otomatis per branch/PR.
