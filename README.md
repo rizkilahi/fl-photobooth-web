@@ -1,5 +1,7 @@
 # Photobooth Web
 
+**Live App:** [https://rizkilahi.github.io/fl-photobooth-web/](https://rizkilahi.github.io/fl-photobooth-web/)
+
 Web photobooth statis (HTML/CSS/JS murni, tanpa backend). Foto diproses di browser, tidak diunggah ke server.
 
 ## Fitur
@@ -69,5 +71,10 @@ import("./lib.js").then(({ FILTERS, toCss }) => {
 });
 ```
 
-## Deploy
-Folder ini bisa langsung di-deploy sebagai situs statis (GitHub Pages / Netlify / Vercel / Cloudflare Pages). Wajib HTTPS agar kamera bisa diakses.
+## Deploy (GitHub Actions → GitHub Pages)
+Aplikasi di-deploy otomatis ke **GitHub Pages** ([https://rizkilahi.github.io/fl-photobooth-web/](https://rizkilahi.github.io/fl-photobooth-web/)) melalui workflow `.github/workflows/deploy.yml` setiap ada push ke branch `main` (atau via `workflow_dispatch`):
+1. Menjalankan `npm ci`, `npm run lint` (ESLint), dan `npm test` (Vitest).
+2. Menyalin hanya file produksi (`index.html`, `style.css`, `app.js`, `lib.js`) ke folder `_site/` agar file pengembangan (`docs/`, `tests/`, `package*.json`) tidak ikut terekspos di situs GitHub Pages.
+3. Mengunggah artefak `_site/` dan men-deploy ke GitHub Pages dengan HTTPS aktif otomatis.
+
+Panduan operasional lengkap (termasuk cara mematikan Pages atau mengubah visibilitas repo) tersedia di [`docs/HANDOVER.md`](docs/HANDOVER.md).

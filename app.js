@@ -495,4 +495,6 @@ renderAll();
 loadFonts().then(() => renderStrip());
 startCamera();
 
-window.__photobooth = { state, stats, filterSupport, renderAll, FILTERS, FRAMES }; // untuk debug/uji
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || new URLSearchParams(location.search).has("debug")) {
+  window.__photobooth = { state, stats, filterSupport, renderAll, FILTERS, FRAMES }; // untuk debug/uji
+}

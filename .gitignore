@@ -6,3 +6,4 @@ node_modules/
 dist/
 .expo/
 *.log
+_site

@@ -1,6 +1,6 @@
 # STATUS — photobooth-web
 
-Fase saat ini: 3 Build M2 (menunggu mulai)
+Fase saat ini: 5 Deploy & Handover (SELESAI)
 
 ## Log Gate
 - 2026-10-28 Fase 0 Intake selesai, proyek dibuat.
@@ -17,3 +17,4 @@ Fase saat ini: 3 Build M2 (menunggu mulai)
 - 2026-10-28 QA M2: 16 cek LULUS, 0 bug (kamera tiruan; lead cek 44 tool call di sesi QA, 49 unit test lulus). Review M2: APPROVE WITH CHANGES (0 C/H, 1 M, 5 L). Keputusan user: perbaiki SEMUA temuan review M2 (M2-M1, M2-L1 s.d. M2-L5) sebelum merge ke main, lalu lanjut Fase 5 Deploy.
 - 2026-10-28 [dev] Perbaikan review M2: M2-M1 dan M2-L1 s.d. M2-L5 selesai di branch m2-cetak-polish (lint bersih, 49 tes hijau). Belum merge ke main.
 - 2026-10-28 Lead verifikasi fix M2 (lint 0 error, 49 unit test lulus) & merge m2-cetak-polish ke main. Masuk Fase 5: Deploy & Handover (L3 debug hook, L9 GitHub Actions Pages, repo public, docs/HANDOVER.md).
+- 2026-10-28 [dev] Fase 5 Deploy & Handover selesai: perbaikan L3 (window.__photobooth hanya di localhost/127.0.0.1/?debug) & L9 (workflow .github/workflows/deploy.yml hanya menyalin index.html, style.css, app.js, lib.js ke _site/), tulis docs/HANDOVER.md, perbarui README.md, lint & 49 unit test lulus, deploy GitHub Pages aktif di https://rizkilahi.github.io/fl-photobooth-web/.
