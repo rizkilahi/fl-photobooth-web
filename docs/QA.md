@@ -69,3 +69,47 @@
 ## 4. Kesimpulan
 - **Milestone M1 Berstatus:** **LULUS (PASS)**
 - Semua pengujian unit test (35/35), linting (0 error), ketahanan kamera, caching filter per slot, tombol Batal sesi, dan fallback filter piksel telah diverifikasi dan berjalan sesuai spesifikasi docs/SPEC.md.
+
+---
+
+## M2 — Cetak & Polish (branch m2-cetak-polish)
+
+- **Tanggal Pengujian:** 2026-10-28
+- **Tester / Peran:** QA (Gemini 3.8 Flash)
+- **Branch:** `m2-cetak-polish`
+- **Lingkungan Pengujian:** Headless Chromium via CDP / Browser Use di Linux VM (1280×800 Desktop & 390×844 Mobile)
+- **Catatan Kamera & Perangkat:** Kamera diuji menggunakan kamera tiruan (*mock webcam*) via CDP `Page.addScriptToEvaluateOnNewDocument` (`canvas.captureStream` & `enumerateDevices`). Pengujian cetak fisik printer hardware serta browser Safari dan Firefox **tidak diuji** (keterbatasan lingkungan server/headless VM).
+
+### 1. Hasil Pengujian Fungsional & Kriteria Penerimaan (AC)
+
+| No | Item Pengujian / Acceptance Criteria | Status | Bukti Nilai / Observasi |
+|---|---|---|---|
+| 1 | **Regresi M1: Alur Sesi 4 Foto & Slot** | **LULUS** | 4 foto tertangkap berurutan, thumbnail 1–4 terisi (`filled`), tombol Cetak & Unduh aktif setelah selesai. |
+| 2 | **Regresi M1: Tombol Batal & Tombol Esc** | **LULUS** | Saat sesi dimulai, tombol Batal tampil dan menerima fokus keyboard (`document.activeElement.id === 'btnCancel'`). Penekanan tombol `Escape` membatalkan sesi seketika, badge kembali ke `Siap`, dan fokus kembali ke tombol Mulai (`btnStart`). |
+| 3 | **Regresi M1: Kamera Putus -> Sambung Ulang** | **LULUS** | Saat video track dihentikan/ended, pesan `Koneksi kamera terputus` muncul bersama tombol `Sambung ulang kamera`. Klik sambung ulang berhasil mendapatkan stream baru dan video kembali aktif. |
+| 4 | **Regresi M1: Efisiensi Filter (Debounce/Cache)** | **LULUS** | Mengetik teks kustom tidak memicu filter ulang foto (`filterRunsDiff: 0`), rendering strip hanya memperbarui canvas komposit. |
+| 5 | **M2 Cetak Mode 2×6 Inci (AC-06.1, AC-06.2)** | **LULUS** | `#page-size` menyetel `@page { size: 2in 6in; margin: 0; }`. `#printArea` memuat tepat 1 elemen `<img>` strip. `Page.printToPDF` menghasilkan PDF 1 halaman dengan mediabox `[0, 0, 144, 432]` pt (tepat 2×6 inci). |
+| 6 | **M2 Cetak Mode 4×6 Inci & Garis Potong (AC-06.3, AC-06.4)** | **LULUS** | `#page-size` menyetel `@page { size: 4in 6in; margin: 0; }`. `#printArea` memuat 2 strip kembar berdampingan dan 1 elemen `div.cutline`. Di media print terkonfirmasi `border-left: 1px dashed rgb(181, 181, 181)` di posisi `left: 192px` (tengah 2 in / 4 in). `Page.printToPDF` menghasilkan 1 halaman mediabox `[0, 0, 288, 432]` pt (tepat 4×6 inci). |
+| 7 | **M2 Pembersihan Print Area Setelah Cetak** | **LULUS** | Setelah event `afterprint` terpanggil, semua elemen di `#printArea` dibersihkan (`children.length === 0`) dan teks style `#page-size` dikosongkan. |
+| 8 | **M2 Unduh PNG Bebas Garis Potong** | **LULUS** | Unduhan PNG berasal langsung dari canvas `#strip` (dimensi 600×1800 px) tanpa elemen garis potong. |
+| 9 | **M2 Aksesibilitas (A11y)** | **LULUS** | Countdown memiliki `aria-live="polite"` & `aria-atomic="true"`. Shot badge memiliki `role="status"` & `aria-live="polite"`. Seluruh kontrol (`cameraSelect`, `textPreset`, `textCustom`, `fontSelect`, `printMode`, dan thumbnail 1–4) memiliki atribut `aria-label` yang deskriptif. `#printArea` memiliki `aria-hidden="true"`. |
+| 10 | **M2 Swatch Frame Putih Terlihat** | **LULUS** | Chip frame Classic/Putih memiliki swatch berlatar `#ffffff` dengan border penegas `1px solid rgb(240, 217, 207)`, terlihat jelas di atas background form. |
+| 11 | **M2 Favicon & Meta Description** | **LULUS** | Tag `<meta name="description">` hadir dengan deskripsi photobooth privasi. Tag `<link rel="icon">` memuat SVG data URI kuda poni photobooth (`data:image/svg+xml,...`). |
+| 12 | **M2 Web Font Courier Prime 400** | **LULUS** | `document.fonts.check('400 16px "Courier Prime"')` bernilai `true`. Google Fonts mengunduh varian regular 400. |
+| 13 | **M2 Catatan Privasi Footer** | **LULUS** | Teks `Foto diproses lokal di browsermu — tidak ada yang diunggah ke server mana pun.` tampil jelas di bagian footer. |
+| 14 | **M2 Auto-shrink Teks Kustom (fitFont)** | **LULUS** | Teks kustom 28 karakter mengecil otomatis ke ukuran font 15px monospace dengan lebar teks 252px (muat dalam batas aman strip 508px, tidak terpotong). |
+| 15 | **M2 Tampilan Responsif Mobile & Desktop** | **LULUS** | Diuji pada viewport 1280×800 (Desktop) dan 390×844 (Mobile). Tidak ada horizontal overflow/scrolling (`scrollWidth === clientWidth === 390px`). Layout bertumpuk rapi pada layar sempit. |
+| 16 | **Konsol Browser & Status Kode** | **LULUS** | 0 pesan error konsol browser selama seluruh alur pengujian. Halaman dikembalikan ke state awal bersih. |
+
+### 2. Pengujian Kode Otomatis
+- **Unit Test (Vitest):** `npm test` -> 39 passed (termasuk 4 pengujian baru untuk helper printLayout M2).
+- **Linting (ESLint):** `npm run lint` -> 0 errors / 0 warnings.
+
+### 3. Daftar Temuan / Bug M2
+| ID Temuan | Komponen / User Story | Langkah Reproduksi | Hasil vs Harapan | Tingkat Keparahan | Catatan |
+|---|---|---|---|---|---|
+| - | - | - | Tidak ditemukan bug fungsional, regresi, atau cacat tampilan pada Milestone M2. | **None** | Seluruh kriteria penerimaan M2 dan perbaikan dari review M1 terpenuhi dengan sempurna. |
+
+### 4. Kesimpulan Milestone M2
+- **Status Milestone M2:** **LULUS (PASS)**
+- Seluruh perbaikan dari review M1 (L2, L5, L6, L8), fitur baru cetak 2×6 dan 4×6, garis potong, pembersihan DOM print, a11y, dan visual polish telah terverifikasi dan memenuhi standar penerimaan.
