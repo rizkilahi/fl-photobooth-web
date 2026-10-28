@@ -48,5 +48,26 @@ npm test
 ```
 Fungsi murni (filter, crop, tanggal, font, pesan error, keputusan cache, layout cetak) ada di `lib.js` dan diuji di `tests/`.
 
+### Reprodusibilitas angka `GOLDEN` filter (`tests/lib.test.js`)
+Tabel `GOLDEN` pada `tests/lib.test.js` berisi nilai RGB literal dari `ctx.filter` Chromium nyata (bukan hasil rumus `lib.js`), untuk memverifikasi bahwa fallback piksel `applyFilterToData` setara dengan `ctx.filter` dalam toleransi `±2` per kanal. Untuk mengambil/memverifikasi ulang angka tersebut di Chrome/Chromium, jalankan server lokal (`python3 -m http.server 8000`), buka `http://localhost:8000`, lalu jalankan skrip berikut di DevTools Console:
+```js
+import("./lib.js").then(({ FILTERS, toCss }) => {
+  const inputs = [[120, 80, 200], [200, 150, 100], [30, 200, 60], [240, 240, 240]];
+  const src = document.createElement("canvas"), dst = document.createElement("canvas");
+  src.width = src.height = dst.width = dst.height = 1;
+  const sx = src.getContext("2d"), dx = dst.getContext("2d");
+  const out = {};
+  for (const { id, p } of FILTERS.filter((f) => f.id !== "normal")) {
+    const css = toCss(p);
+    out[id] = { css, rows: inputs.map(([r, g, b]) => {
+      sx.fillStyle = `rgb(${r},${g},${b})`; sx.fillRect(0, 0, 1, 1);
+      dx.clearRect(0, 0, 1, 1); dx.filter = css; dx.drawImage(src, 0, 0);
+      return [[r, g, b], Array.from(dx.getImageData(0, 0, 1, 1).data.slice(0, 3))];
+    }) };
+  }
+  console.log(JSON.stringify(out));
+});
+```
+
 ## Deploy
 Folder ini bisa langsung di-deploy sebagai situs statis (GitHub Pages / Netlify / Vercel / Cloudflare Pages). Wajib HTTPS agar kamera bisa diakses.

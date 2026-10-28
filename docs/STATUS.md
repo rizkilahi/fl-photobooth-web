@@ -15,3 +15,4 @@ Fase saat ini: 3 Build M2 (menunggu mulai)
 - 2026-10-28 [dev] M2 selesai di branch m2-cetak-polish (lint bersih, 49 test hijau; uji browser kamera tiruan + emulasi print 2×6/4×6 + printToPDF 1 halaman). Belum merge ke main, menunggu gate M2.
 - 2026-10-28 Gate M2 (user): keputusan dev M2 (garis potong di batas strip, favicon inline, font hanya weight terpakai, catatan privasi Google Fonts) DISETUJUI. Lead verifikasi: lint bersih, 49 tes lulus, fokus Batal/Mulai, cetak 4x6 + garis potong. Lanjut QA + Review M2 sebelum merge.
 - 2026-10-28 QA M2: 16 cek LULUS, 0 bug (kamera tiruan; lead cek 44 tool call di sesi QA, 49 unit test lulus). Review M2: APPROVE WITH CHANGES (0 C/H, 1 M, 5 L). Keputusan user: perbaiki SEMUA temuan review M2 (M2-M1, M2-L1 s.d. M2-L5) sebelum merge ke main, lalu lanjut Fase 5 Deploy.
+- 2026-10-28 [dev] Perbaikan review M2: M2-M1 dan M2-L1 s.d. M2-L5 selesai di branch m2-cetak-polish (lint bersih, 49 tes hijau). Belum merge ke main.

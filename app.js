@@ -19,6 +19,10 @@ const stats = { filterRuns: 0 }; // hitung berapa kali foto benar-benar difilter
 let session = null;              // AbortController sesi pemotretan aktif
 let startToken = 0;              // mencegah balapan antar-startCamera
 let badgeTimer = 0;
+let printing = false;            // cegah klik ganda tombol Cetak (M2-L1)
+let printToken = 0;              // cegah balapan print() vs afterprint (M2-L5)
+let printPrepared = false;       // tandai #printArea sudah disiapkan untuk siklus cetak saat ini
+let spaceArmed = false;          // mulai sesi saat keyup Spasi agar tidak mengklik btnCancel di Firefox (M2-M1)
 
 // ---------- Elemen ----------
 const $ = (id) => document.getElementById(id);
@@ -46,9 +50,11 @@ function releaseStream() {
 
 function onCameraLost(stream) {
   if (stream !== state.stream) return; // stream lama / sudah diganti
-  if (session) session.abort();        // hentikan sesi pemotretan dengan bersih
+  const hadSession = Boolean(session);
   releaseStream();
   showCamMessage(CAMERA_LOST_MESSAGE, "Sambung ulang");
+  if (session) session.abort();        // hentikan sesi pemotretan dengan bersih (fokus dipulihkan di setBusy)
+  else if (!hadSession) btnReconnect.focus();
 }
 
 async function startCamera(deviceId) {
@@ -182,6 +188,7 @@ async function takeShot(index, signal) {
 async function runSession(indices) {
   if (state.busy) return;
   if (!state.stream || !video.videoWidth) { alert("Kamera belum aktif."); return; }
+  const singleSlot = indices.length === 1 ? indices[0] : null;
   const ctl = session = new AbortController();
   clearTimeout(badgeTimer);
   state.busy = true; setBusy(true);
@@ -197,7 +204,7 @@ async function runSession(indices) {
     else { note = "Gagal mengambil foto"; console.error(e); }
   } finally {
     session = null;
-    state.busy = false; setBusy(false);
+    state.busy = false; setBusy(false, singleSlot);
     shotBadge.textContent = note;
     if (note) badgeTimer = setTimeout(() => { shotBadge.textContent = ""; }, 2500);
   }
@@ -206,17 +213,23 @@ async function runSession(indices) {
 function cancelSession() { if (session) session.abort(); }
 
 // Kunci kontrol yang bisa mengganggu sesi; tombol Batal hanya tampil saat sesi berjalan.
-// Fokus keyboard: sesi mulai -> pindah ke Batal; sesi selesai -> kembali ke Mulai bila fokus hilang (jatuh ke body / tombol Batal yang disembunyikan).
-function setBusy(b) {
+// Fokus keyboard: sesi mulai -> pindah ke Batal; sesi selesai -> kontekstual (M2-L4):
+// kamera putus -> btnReconnect; retake 1 slot -> tombol thumbnail slot itu (setelah renderThumbs); selain itu -> btnStart.
+function setBusy(b, singleSlot = null) {
   const active = document.activeElement;
-  const focusLost = !active || active === document.body || active === btnCancel;
+  const focusLost = !active || active === document.body || active === btnCancel || thumbsEl.contains(active);
   btnStart.disabled = b; btnReset.disabled = b;
   timerSel.disabled = b; mirrorChk.disabled = b; cameraSelect.disabled = b;
   btnCancel.hidden = !b;
   thumbsEl.querySelectorAll("button").forEach((t) => (t.disabled = b));
   updateButtons();
-  if (b) btnCancel.focus();
-  else if (focusLost) btnStart.focus();
+  if (b) {
+    btnCancel.focus();
+  } else if (focusLost) {
+    if (!state.stream) btnReconnect.focus();
+    else if (singleSlot !== null) (thumbsEl.querySelectorAll("button")[singleSlot] || btnStart).focus();
+    else btnStart.focus();
+  }
 }
 
 // ---------- Gambar strip ----------
@@ -263,6 +276,7 @@ function currentText() {
 
 // Hanya menggambar strip dari cache; tidak memfilter ulang foto kecuali cache kosong/usang.
 function renderStrip() {
+  printPrepared = false;
   const fr = FRAMES.find((f) => f.id === state.frame);
   sctx.clearRect(0, 0, STRIP_W, STRIP_H);
   drawFrameBg(fr);
@@ -322,7 +336,7 @@ function renderThumbs() {
 
 function updateButtons() {
   const done = state.shots.every(Boolean);
-  btnPrint.disabled = !done || state.busy;
+  btnPrint.disabled = !done || state.busy || printing;
   btnDownload.disabled = !done || state.busy;
   btnStart.textContent = state.shots.some(Boolean) ? "▶ Foto ulang semua (4)" : "▶ Mulai (4 foto)";
 }
@@ -371,19 +385,23 @@ function download() {
   }, "image/png");
 }
 
-// Bersihkan #printArea (data-URL strip ~ratusan KB per gambar) + aturan @page setelah dialog cetak ditutup.
+// Bersihkan #printArea (data-URL strip ~ratusan KB per gambar) + aturan @page setelah dialog cetak ditutup
+// serta di awal print/beforeprint berikutnya agar bebas race condition (M2-L5).
 function clearPrintArea() {
+  printToken++;
+  printPrepared = false;
   const area = $("printArea");
   area.querySelectorAll("img").forEach((img) => { img.removeAttribute("src"); });
   area.replaceChildren();
   $("page-size").textContent = "";
 }
 
-async function print() {
+function populatePrintArea() {
   const url = strip.toDataURL("image/png");
   const layout = printLayout(printMode.value);
   $("page-size").textContent = layout.pageCss;
   const area = $("printArea");
+  area.querySelectorAll("img").forEach((img) => { img.removeAttribute("src"); });
   area.replaceChildren();
   const loads = [];
   for (let i = 0; i < layout.copies; i++) {
@@ -393,8 +411,35 @@ async function print() {
   if (layout.cutLine) { // garis bantu potong hanya di cetakan 4x6; tidak menyentuh canvas/PNG
     const cut = document.createElement("div"); cut.className = "cutline"; area.appendChild(cut);
   }
-  await Promise.all(loads);
-  window.print();
+  printPrepared = true;
+  return loads;
+}
+
+// Tangani Ctrl+P / menu Print browser saat 4 foto sudah siap tetapi #printArea masih kosong/usang (M2-L2).
+function onBeforePrint() {
+  if (printPrepared && $("printArea").children.length > 0) {
+    printPrepared = false;
+    return;
+  }
+  clearPrintArea();
+  if (!state.busy && state.shots.every(Boolean)) populatePrintArea();
+  printPrepared = false;
+}
+
+async function print() {
+  if (printing || state.busy || !state.shots.every(Boolean)) return;
+  printing = true;
+  updateButtons();
+  try {
+    clearPrintArea();
+    const token = printToken;
+    await Promise.all(populatePrintArea());
+    if (token !== printToken) return; // dibersihkan/dibatalkan saat menunggu decode (M2-L5)
+    window.print();
+  } finally {
+    printing = false;
+    updateButtons();
+  }
 }
 
 // ---------- Font ----------
@@ -421,13 +466,26 @@ textPreset.onchange = () => { textCustom.hidden = textPreset.value !== "__custom
 textCustom.oninput = renderStrip;
 showDate.onchange = renderStrip;
 fontSelect.onchange = async () => { await loadFonts(fontSelect.value); renderStrip(); };
+printMode.onchange = () => { printPrepared = false; };
+window.addEventListener("beforeprint", onBeforePrint);
 window.addEventListener("afterprint", clearPrintArea);
+const isInteractive = (el) => Boolean(el && (/INPUT|SELECT|TEXTAREA|BUTTON/.test(el.tagName) || el.isContentEditable));
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && state.busy) { e.preventDefault(); cancelSession(); return; }
-  if (e.code === "Space" && !state.busy && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) {
-    e.preventDefault(); btnStart.click();
+  if (e.code === "Space" && !state.busy && !isInteractive(document.activeElement)) {
+    e.preventDefault(); // cegah scroll; sesi dimulai saat keyup Spasi agar tidak mengklik btnCancel di Firefox (M2-M1)
+    if (!e.repeat) spaceArmed = true;
   }
 });
+document.addEventListener("keyup", (e) => {
+  if (e.code !== "Space" || !spaceArmed) return;
+  spaceArmed = false;
+  if (!state.busy && !isInteractive(document.activeElement)) {
+    e.preventDefault();
+    btnStart.click();
+  }
+});
+window.addEventListener("blur", () => { spaceArmed = false; });
 navigator.mediaDevices?.addEventListener?.("devicechange", onDeviceChange);
 
 // ---------- Init ----------

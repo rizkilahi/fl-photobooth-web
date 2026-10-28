@@ -100,8 +100,8 @@ select, input[type=text] {
 #printArea .cutline { display: none; }
 @media print {
   html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-  body > *:not(#printArea) { display: none !important; }
-  #printArea { display: flex !important; position: relative; gap: 0; margin: 0; padding: 0; break-inside: avoid; page-break-inside: avoid; }
+  body:has(#printArea:not(:empty)) > *:not(#printArea) { display: none !important; }
+  body:has(#printArea:not(:empty)) #printArea { display: flex !important; position: relative; gap: 0; margin: 0; padding: 0; break-inside: avoid; page-break-inside: avoid; }
   #printArea img { display: block; flex: none; width: 2in; height: 6in; max-width: none; margin: 0; padding: 0; border: 0; }
   /* garis bantu potong: hanya dibuat app.js pada mode 4x6, tepat di batas antar-strip (x = 2in) */
   #printArea .cutline { display: block; position: absolute; top: 0; bottom: 0; left: 2in; width: 0; border-left: 1px dashed #b5b5b5; transform: translateX(-0.5px); pointer-events: none; }

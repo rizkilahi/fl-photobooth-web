@@ -100,6 +100,17 @@ describe("applyFilterToData (matriks piksel vs rumus)", () => {
   // drawImage ke canvas 1x1 lain, getImageData. Angka di bawah LITERAL hasil Chrome, bukan hasil rumus lib.js.
   // Toleransi ±2: Chrome membulatkan di tiap tahap filter, sedangkan fallback piksel membulatkan sekali di akhir.
   // Sekaligus bukti AC-03.3 (fallback piksel visual setara ctx.filter).
+  // Cara reproduksi di DevTools Console Chrome pada http://localhost:8000 (lihat juga README.md bagian Pengembangan):
+  //   import("./lib.js").then(({ FILTERS, toCss }) => {
+  //     const inputs = [[120,80,200],[200,150,100],[30,200,60],[240,240,240]];
+  //     const s = document.createElement("canvas"), d = document.createElement("canvas"); s.width = s.height = d.width = d.height = 1;
+  //     const sx = s.getContext("2d"), dx = d.getContext("2d"), out = {};
+  //     for (const { id, p } of FILTERS.filter((f) => f.id !== "normal")) {
+  //       const css = toCss(p);
+  //       out[id] = { css, rows: inputs.map(([r,g,b]) => { sx.fillStyle = `rgb(${r},${g},${b})`; sx.fillRect(0,0,1,1); dx.clearRect(0,0,1,1); dx.filter = css; dx.drawImage(s,0,0); return [[r,g,b], [...dx.getImageData(0,0,1,1).data.slice(0,3)]]; }) };
+  //     }
+  //     console.log(JSON.stringify(out));
+  //   });
   const TOL = 2;
   const GOLDEN = {
     bw: { css: "grayscale(1) contrast(1.15)", rows: [[[120, 80, 200], [92, 92, 92]], [[200, 150, 100], [161, 161, 161]], [[30, 200, 60], [157, 157, 157]], [[240, 240, 240], [255, 255, 255]]] },
